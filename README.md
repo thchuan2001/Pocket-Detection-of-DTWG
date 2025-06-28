@@ -12,7 +12,7 @@ We first use [Fpocket](http://fpocket.sourceforge.net/) to detect pockets in siz
 
 - - to use the code, please refer to the [MolCRAFT](https://github.com/AlgoMole/MolCRAFT?tab=readme-ov-file) repository:
 
-- - data for training out SBDD model and the trained checkpoint can be found in google drive: https://drive.google.com/file/d/1aUGnX_QV3MQKChosdjS0_zXPn7b0YMUP/view?usp=drive_link
+- - data for training out SBDD model and the trained checkpoint can be found in google drive: [https://drive.google.com/file/d/1aUGnX_QV3MQKChosdjS0_zXPn7b0YMUP/view?usp=drive_link](https://drive.google.com/file/d/1ddvtLqCAU2qUAxsiO636HWTKVW7Otx10/view?usp=sharing)
 
 - - to use the trained model, please download the checkpoint and put it in the `./SBDD_AUG/sbdd/checkpoints` folder
 
