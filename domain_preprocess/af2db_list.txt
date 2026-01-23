@@ -1,0 +1,5 @@
+Mouse, https://ftp.ebi.ac.uk/pub/databases/alphafold/latest/UP000000589_10090_MOUSE_v6.tar
+Budding_yeast, https://ftp.ebi.ac.uk/pub/databases/alphafold/latest/UP000002311_559292_YEAST_v6.tar
+Fruit_fly, https://ftp.ebi.ac.uk/pub/databases/alphafold/latest/UP000000803_7227_DROME_v6.tar
+E_coli, https://ftp.ebi.ac.uk/pub/databases/alphafold/latest/UP000000625_83333_ECOLI_v6.tar
+Arabidopsis, https://ftp.ebi.ac.uk/pub/databases/alphafold/latest/UP000006548_3702_ARATH_v6.tar

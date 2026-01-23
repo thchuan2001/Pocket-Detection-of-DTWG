@@ -1,0 +1,85 @@
+{
+    // 使用 IntelliSense 了解相关属性。 
+    // 悬停以查看现有属性的描述。
+    // 欲了解更多信息，请访问: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python 调试程序: 当前文件",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal"
+        },
+        {
+            //--config_file configs/default.yaml --epochs 15 --no_wandb
+            "name": "bfn_train",
+            "type": "python",
+            "request": "launch",
+            "program": "train_bfn.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "--config_file",
+                "configs/default.yaml",
+                "--no_wandb",
+                "--num_samples",
+                "1",
+                "--epochs",
+                "1"
+            ],
+            "cwd": "${workspaceFolder}/",
+            "env": {
+                "CUDA_VISIBLE_DEVICES": "1"
+            },
+            "pythonPath": "/opt/conda/bin/python"
+        },
+        // python train_bfn.py --num_samples 10 --inference_input_pkl /data/itersbdd_bfn/DTWG_DUD-E/diffdock09_randomsize/AF2_fpocket.pkl  --output_dir /data/itersbdd_bfn/DTWG_DUD-E/diffdock09_randomsize/  --device 1,2,3,4,5,6,7  --ckpt_path /data/bfn_data/ckpts/pdbbind_cb_09.ckpt --sample_num_atoms ref_random
+        {
+            "name": "bfn_test",
+            "type": "python",
+            "request": "launch",
+            "program": "train_bfn.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "--num_samples",
+                "1",
+                "--inference_input_pkl",
+                "/data/itersbdd_bfn/DTWG_DUD-E/diffdock09_randomsize/AF2_fpocket.pkl",
+                "--output_dir",
+                "/data/itersbdd_bfn/DTWG_DUD-E/diffdock09_randomsize/",
+                "--device",
+                "1,2,3,4,5,6,7",
+                "--ckpt_path",
+                "/data/bfn_data/ckpts/pdbbind_cb_09.ckpt",
+                "--sample_num_atoms",
+                "ref_random"
+            ],
+            "cwd": "${workspaceFolder}/",
+            "pythonPath": "/opt/conda/bin/python",
+        },
+        { 
+            "name": "pocket_infer",
+            "type": "python",
+            "request": "launch",
+            "program": "sample_for_pocket.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "--pocket_path",
+                "/data/DTWG_fpocket/pockets_test",
+                "--ckpt_path",
+                "/data/bfn_data/tanhaichuan_bfn_sbdd/pdbbind_cb_09/default/ckpts/last-v1.ckpt",
+                "--no_wandb",
+                "--output_dir",
+                "/data/tmp1"
+            ],
+            "cwd": "${workspaceFolder}/",
+            "pythonPath": "/opt/conda/bin/python",
+            "env": {
+                "CUDA_VISIBLE_DEVICES": "1"
+            }
+        }
+    ]
+}

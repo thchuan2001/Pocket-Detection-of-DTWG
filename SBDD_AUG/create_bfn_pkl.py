@@ -1,48 +1,18 @@
-# create a pkl file for bfn
-
-
-
-key_word_list=[
-    "A0A5K1K8R3"
-    "A0A5K1K8U3",
-    "A0A5K1K930",
-    "C0H4G1",
-    "C0H4N6",
-    "O96139",
-    "Q7KWI6",
-    "Q8I2A8",
-    "Q8I2Q0",
-    "Q8I3V7",
-    "Q8I4R4",
-    "Q8I5A2",
-    "Q8I5A6",
-    "Q8I298",
-    "Q8I470",
-    "Q8I578",
-    "Q8IDR1",
-    "Q8IFN7",
-    "Q8IIV4",
-    "Q8IJI2",
-    "Q8IJV0",
-    "Q8IJV2",
-    "Q8IL23",
-    "Q8ILM9",
-]
-
-
+# create a pkl file for bfn for test data
 
 import os
 import glob
 
-fpocket_path="/data/Plasmodium_screening/AF2_fpocket"
+# 使用10k测试口袋目录
+fpocket_path="/home/tanhaichuan/GenPack_for_galaxy/test_10k_backbone_pocket"
 
-pkl_output_path="/data/Plasmodium_screening/genpack_result/bfn_output/fpocket.pkl"
+# 输出到测试目录
+pkl_output_path="/home/tanhaichuan/GenPack_for_galaxy/test_backbone_pocket.pkl"
 ref_ch4_file="/project/ch4.sdf"
 pockets=glob.glob(os.path.join(fpocket_path,"*.pdb"))
 
-# filter pockets
-pockets=[p for p in pockets if any([key in p for key in key_word_list])]
-print(len(pockets))
+# 不使用关键词过滤，使用所有测试文件
+print(f"Found {len(pockets)} test pockets")
 
 
 

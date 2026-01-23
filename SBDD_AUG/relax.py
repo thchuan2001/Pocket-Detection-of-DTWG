@@ -8,7 +8,7 @@ from rdkit.Chem import SDMolSupplier, MolToPDBBlock
 from multiprocessing import Pool
 import time
 
-SCHRODINGER = '/opt/schrodinger2021-2'
+SCHRODINGER = '/home/data/schrodinger2024-1'
 from Bio import PDB
 from Bio.PDB import PDBIO
 from rdkit import Chem
@@ -67,7 +67,9 @@ def relax(dirs,pdbfile,method='local_refine'):
     start_time = time.time()
     assert method in ['local_refine','mc_refine','minization']
     os.chdir(dirs)
-    cmd=f'{SCHRODINGER}/utilities/prepwizard -j prepwizard_{pdbfile} -watdist 5 -rehtreat -propka_pH 7.4  -HOST localhost:1 -NJOBS 1 -noimpref -TMPLAUNCHDIR -ATTACHED -WAIT {pdbfile} {pdbfile.replace(".pdb","_fixed.maegz")}'
+    cmd=f'{SCHRODINGER}/utilities/prepwizard -j prepwizard_{pdbfile.replace('.', '_').replace("/","_")} -watdist 5 -rehtreat -propka_pH 7.4  -HOST localhost:1 -noimpref -TMPLAUNCHDIR -ATTACHED -WAIT {pdbfile} {pdbfile.replace(".pdb","_fixed.maegz")}'
+
+    # print("Running command:", cmd)
     os.system(cmd)
     if method == 'local_refine':
         conf = f'''STRUCT_FILE	{pdbfile.replace(".pdb","_fixed.maegz")}
@@ -140,7 +142,7 @@ HOST	localhost:1
     os.system(f'rm {pdbfile.replace(".pdb","_refine.inp")}')
     os.system(f'rm {pdbfile.replace(".pdb","_refine-out.maegz")}')
     os.system(f'rm {pdbfile.replace(".pdb","_refine.log")}')
-    os.system(f'rm prepwizard_{os.path.basename(pdbfile)}.log')
+    os.system(f'rm prepwizard_{pdbfile.replace('.', '_').replace("/","_")}.log')
     
     time_cost=time.time()-start_time
     return time_cost
@@ -180,47 +182,110 @@ HOST	localhost:1
 #     with Pool(101) as p:
 #         results = p.starmap(relax, task_list)
 
-if __name__ == "__main__":
-
-    protein_dir="/data/Plasmodium_screening/AF2_domains"
-    bfn_output_dir="/data/Plasmodium_screening/genpack_result/bfn_output"
-
-    pocket_list=[f for f in glob.glob(bfn_output_dir+"/*") if os.path.isdir(f)]
-
-    # generate complex pdb    
-    for item in tqdm(pocket_list):
-        ligand_files=glob.glob(os.path.join(item,"*.sdf"))
-        protein_file=os.path.join(protein_dir,"_".join(os.path.basename(item).split("_")[:3])+".pdb")
-        print("protein_dir",protein_file)
-
-        for ligand_file in ligand_files:
-            output_file=os.path.join(item,os.path.basename(ligand_file).replace('.sdf','_complex.pdb'))
-            if os.path.exists(output_file):
-                continue
+def process_single_sdf(protein_file, ligand_file, method='local_refine'):
+    """Process a single SDF file: generate complex and relax"""
+    try:
+        # Generate complex PDB
+        output_file = ligand_file.replace('.sdf', '_complex.pdb')
+        refined_file = ligand_file.replace('.sdf', '_complex_refined.pdb')
+        
+        # Skip if already refined
+        # if os.path.exists(refined_file):
+        #     return ('skip', ligand_file, 0)
+        
+        # Generate complex if not exists
+        if not os.path.exists(output_file):
             generate_complex_pdb(
                 protein_file=protein_file,
                 ligand_file=ligand_file,
                 output_file=output_file
             )
+        
+        # Relax the complex
+        work_dir = os.path.dirname(output_file)
+        pdb_filename = os.path.basename(output_file)
+        time_cost = relax(work_dir, pdb_filename, method)
+        
+        return ('success', ligand_file, time_cost)
+    except Exception as e:
+        return ('error', ligand_file, str(e))
 
 
-    # relax pdb 
-    task_list=[]
-    complex_list=[]
-    for item in tqdm(pocket_list):
-        complex_list+=[x for x in glob.glob(item+"/*.pdb") if not "refined" in x]
-    print("total complex:",len(complex_list))
-    for item in tqdm(complex_list):
-        task_list.append((os.path.dirname(item),os.path.basename(item),'local_refine'))
+if __name__ == "__main__":
+
+    protein_dir="/home/tanhaichuan/GenPack_for_galaxy/domains"
+    bfn_output_dir="/home/tanhaichuan/GenPack_for_galaxy/fpocket_backbone_test_100"
+
+    pocket_list=[f for f in glob.glob(bfn_output_dir+"/*") if os.path.isdir(f)]
+
+    # Collect all SDF files with their corresponding protein files
+    task_list = []
+    for pocket in tqdm(pocket_list, desc="Collecting tasks"):
+        ligand_files = glob.glob(os.path.join(pocket, "*.sdf"))
+        protein_file = os.path.join(protein_dir, "_".join(os.path.basename(pocket).split("_")[:3]) + ".pdb")
+        
+        if not os.path.exists(protein_file):
+            print(f"Warning: protein file not found: {protein_file}")
+            continue
+        
+        for ligand_file in ligand_files:
+            task_list.append((protein_file, ligand_file, 'local_refine'))
+    
+    print(f"Total SDF files to process: {len(task_list)}")
+
+
+    # print the task list
+    for task in task_list[:5]:
+        print(task)
+    print("...")
+    
+    # Process all SDFs in parallel
+    import time as time_module
+    start_time = time_module.time()
+    
     with Pool(128) as p:
-        results = p.starmap(relax, task_list)
-
+        results = p.starmap(process_single_sdf, task_list)
+    
+    
     ##########
     # debug
-    # results=[]
+    # task_list = task_list[:1]
+    # results = []
     # for task in task_list:
-    #     results.append(relax(*task))
+    #     results.append(process_single_sdf(*task))
     ##########
-
-    print(results)
-    print("mean time cost:",sum(results)/len(results))
+    
+    total_time = time_module.time() - start_time
+    # Statistics
+    success_count = sum(1 for r in results if r[0] == 'success')
+    skip_count = sum(1 for r in results if r[0] == 'skip')
+    error_count = sum(1 for r in results if r[0] == 'error')
+    time_costs = [r[2] for r in results if r[0] == 'success']
+    
+    print(f"\n=== Processing Results ===")
+    print(f"Success: {success_count}")
+    print(f"Skipped: {skip_count}")
+    print(f"Errors: {error_count}")
+    print(f"Total wall time: {total_time:.2f}s ({total_time/60:.2f} minutes)")
+    
+    if time_costs:
+        print(f"\n=== Individual Task Statistics ===")
+        print(f"Mean time per task: {sum(time_costs)/len(time_costs):.2f}s")
+        print(f"Min time: {min(time_costs):.2f}s")
+        print(f"Max time: {max(time_costs):.2f}s")
+        print(f"Total processing time (sum): {sum(time_costs):.2f}s ({sum(time_costs)/60:.2f} minutes)")
+        print(f"Speedup factor: {sum(time_costs)/total_time:.2f}x")
+        
+        # Show top 10 slowest tasks
+        task_times = [(results[i][1], results[i][2]) for i in range(len(results)) if results[i][0] == 'success']
+        task_times.sort(key=lambda x: x[1], reverse=True)
+        print(f"\nTop 10 slowest tasks:")
+        for i, (ligand, time_cost) in enumerate(task_times[:10]):
+            print(f"  [{i+1}] {os.path.basename(ligand)}: {time_cost:.2f}s")
+    
+    # Print errors
+    errors = [(r[1], r[2]) for r in results if r[0] == 'error']
+    if errors:
+        print(f"\nErrors occurred in {len(errors)} files:")
+        for ligand, error in errors[:10]:  # Show first 10 errors
+            print(f"  {ligand}: {error}")

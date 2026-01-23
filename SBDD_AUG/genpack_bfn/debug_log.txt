@@ -1,0 +1,144 @@
+wandb: WARNING `resume` will be ignored since W&B syncing is set to `offline`. Starting a new run with run id zmfi6b4q.
+wandb: Tracking run with wandb version 0.17.0
+wandb: W&B syncing is set to `offline` in this directory.  
+wandb: Run `wandb online` or set WANDB_MODE=online to enable cloud syncing.
+Using device list:  [1, 3, 4, 5, 6]
+trying to automatically parse experiment folder...
+change log dir to **/data/bfn_data
+/data/bfn_data/Flex_bfn/data/bfn_data/test_outputs already exists, change test_output_dir to /data/bfn_data/Flex_bfn/data/bfn_data/test_outputs_v417
+  0%|          | 0/100 [00:00<?, ?it/s]  1%|          | 1/100 [00:01<03:08,  1.90s/it] 36%|███▌      | 36/100 [00:02<00:02, 24.33it/s] 52%|█████▏    | 52/100 [00:02<00:01, 29.99it/s] 69%|██████▉   | 69/100 [00:02<00:00, 42.93it/s] 82%|████████▏ | 82/100 [00:03<00:00, 21.56it/s]100%|██████████| 100/100 [00:03<00:00, 26.10it/s]
+train_size: 0, 56
+val_size: 0, 56
+  0%|          | 0/100 [00:00<?, ?it/s]100%|██████████| 100/100 [00:00<00:00, 2531.71it/s]
+GPU available: True (cuda), used: True
+TPU available: False, using: 0 TPU cores
+IPU available: False, using: 0 IPUs
+HPU available: False, using: 0 HPUs
+test_size: 100, 920
+protein feature dim: 27, ligand feature dim: 13
+The config of this process is:
+{
+    "project_name": "Flex_bfn",
+    "exp_name": "data",
+    "revision": "bfn_data",
+    "debug": false,
+    "no_wandb": true,
+    "wandb_resume_id": null,
+    "logging_level": "warning",
+    "seed": 1234,
+    "test_only": true,
+    "empty_folder": false,
+    "dynamics": {
+        "t_min": 0.0001,
+        "sigma1_coord": 0.03,
+        "beta1": 1.5,
+        "protein_atom_feature_dim": 27,
+        "ligand_atom_feature_dim": 13,
+        "use_discrete_t": true,
+        "discrete_steps": 1000,
+        "destination_prediction": true,
+        "sampling_strategy": "end_back_pmf",
+        "node_indicator": true,
+        "time_emb_dim": 1,
+        "time_emb_mode": "simple",
+        "center_pos_mode": "protein",
+        "pos_init_mode": "zero",
+        "net_config": {
+            "name": "unio2net",
+            "num_blocks": 1,
+            "num_layers": 9,
+            "hidden_dim": 128,
+            "n_heads": 16,
+            "edge_feat_dim": 4,
+            "num_r_gaussian": 20,
+            "knn": 32,
+            "num_node_types": 8,
+            "act_fn": "relu",
+            "norm": true,
+            "cutoff_mode": "knn",
+            "ew_net_type": "global",
+            "num_x2h": 1,
+            "num_h2x": 1,
+            "r_max": 10.0,
+            "x2h_out_fc": false,
+            "sync_twoup": false
+        }
+    },
+    "accounting": {
+        "logdir": "/data/bfn_data/Flex_bfn/data/bfn_data",
+        "dump_config_path": "/data/bfn_data/Flex_bfn/data/bfn_data/config.yaml",
+        "wandb_logdir": "/data/bfn_data/Flex_bfn/data/bfn_data",
+        "checkpoint_dir": "/data/bfn_data/Flex_bfn/data/bfn_data/ckpts",
+        "generated_mol_dir": "/data/bfn_data/Flex_bfn/data/bfn_data/sample_output",
+        "val_outputs_dir": "/data/bfn_data/Flex_bfn/data/bfn_data/val_outputs",
+        "test_outputs_dir": "/data/bfn_data/Flex_bfn/data/bfn_data/test_outputs_v417"
+    },
+    "data": {
+        "name": "pl_tr",
+        "path": "./data/PDBBind",
+        "transform": {
+            "ligand_atom_mode": "add_aromatic"
+        },
+        "with_split": true,
+        "atom_decoder": "['H', 'C', 'N', 'O', 'F', 'P', 'S', 'Cl'] (len=8)",
+        "colors_dic": "['#FFFFFF99', 'C7', 'C0', 'C3', 'C1', 'C4', 'C8', 'C9'] (len=8)",
+        "radius_dic": "[0.3, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6] (len=8)",
+        "normalizer_dict": {
+            "pos": 2.0
+        },
+        "inference_input_pkl": "/data/itersbdd_bfn/iter_gnina_0/init_input_backbone.pkl"
+    },
+    "visual": {
+        "save_mols": true,
+        "visual_nums": 10,
+        "visual_chain": false
+    },
+    "train": {
+        "batch_size": 4,
+        "num_workers": 8,
+        "pos_noise_std": 0,
+        "random_rot": false,
+        "val_freq": 20,
+        "epochs": 20,
+        "resume": false,
+        "v_loss_weight": 1,
+        "ckpt_freq": 1,
+        "max_grad_norm": "Q",
+        "optimizer": {
+            "type": "adam",
+            "lr": 0.0005,
+            "weight_decay": 0,
+            "beta1": 0.95,
+            "beta2": 0.999
+        },
+        "scheduler": {
+            "type": "plateau",
+            "factor": 0.6,
+            "patience": 10,
+            "min_lr": 1e-06,
+            "max_iters": 20000
+        },
+        "ema_decay": 0.999
+    },
+    "evaluation": {
+        "ckpt_path": "/data/bfn_data/ckpts/pdbbind_cb_09.ckpt",
+        "batch_size": 130,
+        "sample_steps": 100,
+        "num_samples": 100,
+        "sample_num_atoms": "ref",
+        "docking_config": {
+            "mode": "vina_score",
+            "protein_root": "/data/targetdiff_data/test_set",
+            "exhaustiveness": 16,
+            "pocket_path": "null"
+        }
+    }
+}
+############# [rank 0 ] set output_dir to /mnt/nfs-ssd/data/itersbdd_bfn/gnina/iter_gnina_0/tmp_dir #############
+##### rank 0 finished #####
+start to format at rank 0
+finish format
+wandb: - 0.000 MB of 0.000 MB uploadedwandb: You can sync this run to the cloud by running:
+wandb: wandb sync /data/bfn_data/Flex_bfn/data/bfn_data/wandb/offline-run-20241129_152843-zmfi6b4q
+wandb: Find logs at: /data/bfn_data/Flex_bfn/data/bfn_data/wandb/offline-run-20241129_152843-zmfi6b4q/logs
+WARNING:urllib3.connectionpool:Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'SSLError(SSLEOFError(8, 'EOF occurred in violation of protocol (_ssl.c:1129)'))': /api/4504800232407040/envelope/
