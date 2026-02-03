@@ -55,10 +55,10 @@ def nearest_distance(pdb_file, chain_a_id='A', chain_b_id='B'):
         print(f'Error: {e}')
         return None
 
-pdb_dir = '/data/Plasmodium_screening/template_matching_result/output_complex'
+pdb_dir = '/home/tanhaichuan/GenPack_for_galaxy/template_matching_results'
 pdb_files = glob.glob(os.path.join(pdb_dir, '*refined.pdb'))
 
-
+print(f'Found {len(pdb_files)} pdb files')
 distance_dist=[]
 
 with multiprocessing.Pool() as pool:

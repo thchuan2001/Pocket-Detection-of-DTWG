@@ -6,7 +6,7 @@ import numpy as np
 from multiprocessing import Pool
 from Bio.PDB import PDBParser, PDBIO
 import glob
-# from Drug_The_Whole_Genome.utils.utils import pdb2dict,write_lmdb,save_pdb
+
 class PocketExtractor():
     
     def __init__(self):
@@ -18,8 +18,6 @@ class PocketExtractor():
         task_list=[(x['protein'],x['ligand'],x['threshold'],x['output']) for x in tasks]
         with Pool(128) as p:
             results = p.starmap(self._extract_single, task_list)
-        # for task in tqdm(task_list):
-        #     self._extract_single(*task)
     
     def _extract_single(self,protein_file,ligand_file,threshold,output_file):
 
@@ -50,7 +48,7 @@ class PocketExtractor():
                 print(f"Failed to read protein {protein_file}")
                 return
         else:
-            # read protein
+            # read protein (complex with chain A and B)
             try:
                 protein = PDBParser(QUIET=True).get_structure("protein",protein_file)[0]
                 assert protein is not None
@@ -58,19 +56,23 @@ class PocketExtractor():
                 print(f"Failed to read protein {protein_file}")
                 return
 
+            # Extract ligand coordinates from chain B
+            if 'B' not in protein:
+                print(f"No chain B found in {protein_file}")
+                return
+                
             ligand_chain = protein['B']
             ligand_coords = []
             for residue in ligand_chain:
                 for atom in residue:
                     ligand_coords.append(atom.coord)
 
-            for chain in protein:
+            # Remove chain B, keep only chain A
+            for chain in list(protein):
                 if chain.id != 'A':
                     protein.detach_child(chain.id)
 
-
-   
-        # extract pocket
+        # extract pocket (residues within threshold distance of ligand)
         for chain in protein:
             remove_residue_ids=[]
             for residue in chain:
@@ -95,100 +97,47 @@ class PocketExtractor():
         io.set_structure(protein)
         io.save(output_file)
     
-    def  _remove_atom_element_X_H(self):
+    def _remove_atom_element_X_H(self):
         for chain in self.pocket:
             for residue in chain:
                 remove_atom_ids = []
                 for atom in residue:
-                    if atom.element == 'X' :
-                        print(f"Remove atom element X: {atom}")
+                    if atom.element == 'X':
                         remove_atom_ids.append(atom.id)
-                    if atom.element == 'H' :
-                        print(f"Remove atom element H: {atom}")
+                    if atom.element == 'H':
                         remove_atom_ids.append(atom.id)
                 for atom_id in remove_atom_ids:
                     residue.detach_child(atom_id)
 
-def save_docking_data(complex_file,output_dir):
-        
-    # split protein into receptor.pdb and ligand.sdf from complex_file
-    parser = PDBParser()
-    structure = parser.get_structure('complex', complex_file)[0]
-    receptor=structure['A']
-    save_pdb(receptor,os.path.join(output_dir,'receptor.pdb'))
-    ligand=structure['B']
-    save_pdb(ligand,os.path.join(output_dir,'ligand.pdb'))
-    # convert ligand to sdf
-    cmd=f'obabel {os.path.join(output_dir,"ligand.pdb")} -O {os.path.join(output_dir,"ligand.sdf")}'
-    os.system(cmd)
-    #rm ligand.pdb
-    os.remove(os.path.join(output_dir,"ligand.pdb"))
-    if os.path.exists(os.path.join(output_dir,"ligand.sdf")):
-        return True
-    else:
-        raise Exception
-
 
 if __name__ == "__main__":
 
-    relax_dir = glob.glob("/data/fpocket_backbone_part*/")[0]
-
-
-    # extract pocket
-    tasks=[]
-    for item in tqdm(glob.glob(os.path.join(relax_dir,'*'))):
-        complexes=glob.glob(os.path.join(item,'*_complex_refined.pdb'))
-        complexes=[x for x in complexes if 'pocket' not in os.path.basename(x)]
-        complexes.sort()
-        for complex in complexes:
-            output_file=complex.replace('.pdb','_pocket6A.pdb')
-            tasks.append({
-                'protein':complex,
-                'ligand':None,
-                'threshold':6,
-                'output':output_file
-            })
-
-    pocket_extractor=PocketExtractor()
-    pocket_extractor.run(tasks)
-
+    input_dir = "/home/tanhaichuan/GenPack_for_galaxy/template_matching_results"
     
-    # generate lmdb
-    # for item in tqdm(dataset.get_items()):
-    #     if not os.path.exists(item['protein_dir']):
-    #         continue
-    #     pockets=glob.glob(os.path.join(item['dir'],exp_name,'*pocket*.pdb'))
-    #     pockets=[x for x in pockets if 'pocket' in os.path.basename(x)]
-    #     pockets.sort() 
-    #     parser = PDBParser()
-    #     output_path = os.path.join(item['dir'],exp_name,"pockets.lmdb")
+    # Find all *_refined.pdb files
+    print("Searching for refined complex files...")
+    complexes = glob.glob(os.path.join(input_dir, '*_refined.pdb'))
+    print(f"Found {len(complexes)} refined complex files")
+    
+    # extract pocket
+    tasks = []
+    for complex_file in tqdm(complexes, desc="Preparing tasks"):
+        # Skip if pocket file already exists
+        output_file = complex_file.replace('_refined.pdb', '_refined_pocket6A.pdb')
+        if os.path.exists(output_file):
+            continue
+            
+        tasks.append({
+            'protein': complex_file,
+            'ligand': None,  # Ligand is in chain B of the complex
+            'threshold': 6,
+            'output': output_file
+        })
 
-    #     dics=[]
-    #     for pocket in pockets:
-    #         structure = parser.get_structure('pocket', pocket)
-    #         dic=pdb2dict(structure,pocket)
-    #         dics.append(dic)
-    #     write_lmdb(dics,output_path)
-
-
-    # generate docking_data
-
-    # total_cnt=0
-    # for item in tqdm(dataset.get_items()):
-    #     if not os.path.exists(item['protein_dir']):
-    #         continue
-    #     pockets=glob.glob(os.path.join(item['dir'],exp_name,'*complex*.pdb'))
-    #     pockets=[x for x in pockets if 'pocket' not in os.path.basename(x)]
-    #     pockets.sort()
-    #     parser = PDBParser()
-    #     output_path = os.path.join(item['dir'],exp_name,"docking_data")
-    #     if not os.path.exists(output_path):
-    #         os.makedirs(output_path)
-    #     for pocket in pockets:
-    #         output_dir=os.path.join(output_path,os.path.basename(pocket).replace('.pdb',''))
-    #         if not os.path.exists(output_dir):
-    #             os.makedirs(output_dir)
-    #         res=save_docking_data(pocket,output_dir)
-    #         if res:
-    #             total_cnt+=1
-    #         print(f"Total: {total_cnt}")
+    print(f"Processing {len(tasks)} tasks...")
+    if len(tasks) > 0:
+        pocket_extractor = PocketExtractor()
+        pocket_extractor.run(tasks)
+        print(f"Completed! Generated {len(tasks)} pocket files")
+    else:
+        print("No new pockets to extract (all already exist)")

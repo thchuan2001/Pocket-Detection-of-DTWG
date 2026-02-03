@@ -8,7 +8,7 @@ from rdkit.Chem import SDMolSupplier, MolToPDBBlock
 from multiprocessing import Pool
 import time
 
-SCHRODINGER = '/opt/schrodinger2021-2'
+SCHRODINGER = '/data/schrodinger2024-1'
 from Bio import PDB
 from Bio.PDB import PDBIO
 from rdkit import Chem
@@ -67,7 +67,9 @@ def relax(dirs,pdbfile,method='local_refine'):
     start_time = time.time()
     assert method in ['local_refine','mc_refine','minization']
     os.chdir(dirs)
-    cmd=f'{SCHRODINGER}/utilities/prepwizard -j prepwizard_{pdbfile} -watdist 5 -rehtreat -propka_pH 7.4  -HOST localhost:1 -NJOBS 1 -noimpref -TMPLAUNCHDIR -ATTACHED -WAIT {pdbfile} {pdbfile.replace(".pdb","_fixed.maegz")}'
+    cmd=f'{SCHRODINGER}/utilities/prepwizard -j prepwizard_{pdbfile.replace(".", "_").replace("/","_")} -watdist 5 -rehtreat -propka_pH 7.4  -HOST localhost:1 -noimpref -TMPLAUNCHDIR -ATTACHED -WAIT {pdbfile} {pdbfile.replace(".pdb","_fixed.maegz")}'
+
+    # print("Running command:", cmd)
     os.system(cmd)
     if method == 'local_refine':
         conf = f'''STRUCT_FILE	{pdbfile.replace(".pdb","_fixed.maegz")}
@@ -140,11 +142,10 @@ HOST	localhost:1
     os.system(f'rm {pdbfile.replace(".pdb","_refine.inp")}')
     os.system(f'rm {pdbfile.replace(".pdb","_refine-out.maegz")}')
     os.system(f'rm {pdbfile.replace(".pdb","_refine.log")}')
-    os.system(f'rm prepwizard_{os.path.basename(pdbfile)}.log')
+    os.system(f'rm prepwizard_{pdbfile.replace(".", "_").replace("/","_")}.log')
     
     time_cost=time.time()-start_time
     return time_cost
-
 
 
 # if __name__ == "__main__":
@@ -186,9 +187,9 @@ if __name__ == "__main__":
     # ligand_dir="/data/AF2DB/HumanProt_AF2_fpocket_distributed/HumanProt_AF2_fpocket_BFN_part_0/"
     # output_dir="/data/AF2DB/tmp"
 
-    protein_dir="/data/Plasmodium_screening/AF2_domains"
-    ligand_dir="/data/Plasmodium_screening/template_matching_result/output_ligands"
-    output_dir="/data/Plasmodium_screening/template_matching_result/output_complex"
+    protein_dir="/data/domains"
+    ligand_dir="/data/template_matching_result"
+    output_dir="/data/template_matching_result_complex"
 
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)

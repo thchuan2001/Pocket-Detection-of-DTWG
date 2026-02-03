@@ -5,6 +5,7 @@ import pickle
 import rdkit
 from rdkit import Chem
 import numpy as np
+import json
 import Bio
 from Bio.PDB import PDBParser, Selection, PDBIO
 from tqdm import tqdm
@@ -114,14 +115,21 @@ def get_AF2_matched_ids(AF2_seq,pdbbind_seq,pos_to_id):
 
 def process_AF2_item(AF2_item, output_dir, new_TMalign_result_dir, ligand_dir, AF2_dir, PDBBind_dir, pocket_position_dir,single_chain_dir):
     new_res = []
-    with open(AF2_item, "rb") as f:
-        res_list = pickle.load(f)
+    if AF2_item.endswith(".pkl"):
+        with open(AF2_item, "rb") as f:
+            res_list = pickle.load(f)
+    elif AF2_item.endswith(".json"):
+        with open(AF2_item, "r") as f:
+            res_list = json.load(f)
     sample_size = min(1000, len(res_list))
     res_list = random.sample(res_list, sample_size)
     single_chain_ids=pickle.load(open(single_chain_dir,"rb"))
-    pos_to_id=get_pos_to_id(os.path.join(AF2_dir, AF2_item.split("/")[-1].replace(".pkl",".pdb")))
+    pos_to_id=get_pos_to_id(os.path.join(AF2_dir, AF2_item.split("/")[-1].replace(".pkl",".pdb").replace(".json",".pdb")))
     pocket_cluster = []
     for item in tqdm(res_list):
+        if "rotation_matrix" in item and isinstance(item["rotation_matrix"], list):
+            item["rotation_matrix"] = (np.array(item["rotation_matrix"][0]), np.array(item["rotation_matrix"][1]))
+            
         if item["PDBBind"] not in single_chain_ids:
             continue
         try:
@@ -193,16 +201,16 @@ def process_AF2_item(AF2_item, output_dir, new_TMalign_result_dir, ligand_dir, A
     return None
 
 if __name__ == "__main__":
-    TMalign_result_dir = "/data/Plasmodium_screening/template_matching_result/tmalign_output"
-    output_dir = "/data/Plasmodium_screening/template_matching_result/result"
-    new_TMalign_result_dir = "/data/Plasmodium_screening/template_matching_result/tmalign_output_iou06"
-    ligand_dir = "/data/pdbbind_2020/pdbbind_ligand_only"
-    AF2_dir = "/data/Plasmodium_screening/AF2_domains"
+    TMalign_result_dir = "/data/TMalign_results"
+    output_dir = "/data/pocket_match_results"
+    new_TMalign_result_dir = "/data/pocket_match_filtered_results"
+    ligand_dir = "/data/pdbbind_ligand_only"
+    AF2_dir = "/data/domains"
     PDBBind_dir = "/data/DTWG_pdbbind_receptor_only"
-    pocket_position_dir = "/data/pdbbind_2020/pdbbind_pocket6A_position"
-    single_chain_dir = "/data/pdbbind_2020/single_chain_pocket10A.pkl"
+    pocket_position_dir = "/data/pdbbind_pocket6A_position"
+    single_chain_dir = "/data/single_chain_pocket10A.pkl"
 
-    TMalign_results = glob.glob(TMalign_result_dir + "/*.pkl")
+    TMalign_results = glob.glob(TMalign_result_dir + "/*.json")
 
     # #######
     # # debug

@@ -10,6 +10,7 @@ import glob
 from copy import deepcopy
 import subprocess
 import pickle
+import json
 
 class TMaligner:
     def __init__(self):
@@ -19,7 +20,7 @@ class TMaligner:
 
         rotation_matrix_file = os.path.join("/tmp",protein_file.split("/")[-1].split(".")[0]+"_"+ref_protein_file.split("/")[-1].split(".")[0]+"_rotation_matrix.txt")
 
-        out_bytes = subprocess.check_output(['./TMalign',protein_file,ref_protein_file,"-m",rotation_matrix_file])
+        out_bytes = subprocess.check_output(['/data/template_matching_scripts/TMalign',protein_file,ref_protein_file,"-m",rotation_matrix_file])
         out_text = out_bytes.decode('utf-8').strip().split("\n")
         TMscore1=float(out_text[12].split(" ")[1])
         TMscore2=float(out_text[13].split(" ")[1])
@@ -73,7 +74,7 @@ class TMaligner:
         return {
             "TMscore1":TMscore1,
             "TMscore2":TMscore2,
-            "rotation_matrix":rotation_matrix,
+            "rotation_matrix":(rotation_matrix[0].tolist(), rotation_matrix[1].tolist()),
             "seq_protein":seq_protein,
             "seq_ref_protein":seq_ref_protein
         }
@@ -82,15 +83,18 @@ class TMaligner:
 if __name__ == "__main__":
 
     # for manual multi node calculation
-    # thread_cnt=10
-    # thread_id=1
+    thread_cnt=20
+    thread_id=0
 
     # AF2_dir is the directory of AF2 domains. Domains are stored in pdb format.
     # PDBBind_list is the directory of PDBBind proteins. Proteins are stored in pdb format.
 
-    AF2_dir="/data/Plasmodium_screening/AF2_domains"
+    AF2_dir="/data/domains"
     PDBBind_list="/data/DTWG_pdbbind_receptor_only"
-    output_dir="/data/Plasmodium_screening/template_matching_result/tmalign_output"
+    output_dir="/data/TMalign_results"
+
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
     
     AF2_list=glob.glob(AF2_dir+"/*.pdb")
     PDBBind_list=glob.glob(PDBBind_list+"/*.pdb")
@@ -98,11 +102,11 @@ if __name__ == "__main__":
     PDBBind_list.sort()
 
     # for manual multi node calculation
-    # new_AF2_list=[]
-    # for i,AF2 in enumerate(AF2_list):
-    #     if i%thread_cnt==thread_id:
-    #         new_AF2_list.append(AF2)
-    # AF2_list=new_AF2_list
+    new_AF2_list=[]
+    for i,AF2 in enumerate(AF2_list):
+        if i%thread_cnt==thread_id:
+            new_AF2_list.append(AF2)
+    AF2_list=new_AF2_list
 
 
     print("number of AF2 proteins:",len(AF2_list))
@@ -118,8 +122,13 @@ if __name__ == "__main__":
             if result["TMscore2"]>0.5:
                 res.append(result)
         # save 
-        with open(os.path.join(output_dir,AF2_item.split("/")[-1].split(".")[0]+".pkl"),"wb") as f:
-            pickle.dump(res,f)
+        # with open(os.path.join(output_dir,AF2_item.split("/")[-1].split(".")[0]+".pkl"),"wb") as f:
+        #     pickle.dump(res,f)
+
+        # save as json
+        with open(os.path.join(output_dir,AF2_item.split("/")[-1].split(".")[0]+".json"),"w") as f:
+            json.dump(res,f)
+
     
     with Pool(500) as p:
         p.map(run, AF2_list)

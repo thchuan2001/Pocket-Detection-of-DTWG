@@ -8,7 +8,7 @@ from rdkit.Chem import SDMolSupplier, MolToPDBBlock
 from multiprocessing import Pool
 import time
 
-SCHRODINGER = '/home/data/schrodinger2024-1'
+SCHRODINGER = '~/schrodinger2024-1'
 from Bio import PDB
 from Bio.PDB import PDBIO
 from rdkit import Chem
@@ -67,7 +67,7 @@ def relax(dirs,pdbfile,method='local_refine'):
     start_time = time.time()
     assert method in ['local_refine','mc_refine','minization']
     os.chdir(dirs)
-    cmd=f'{SCHRODINGER}/utilities/prepwizard -j prepwizard_{pdbfile.replace('.', '_').replace("/","_")} -watdist 5 -rehtreat -propka_pH 7.4  -HOST localhost:1 -noimpref -TMPLAUNCHDIR -ATTACHED -WAIT {pdbfile} {pdbfile.replace(".pdb","_fixed.maegz")}'
+    cmd=f'{SCHRODINGER}/utilities/prepwizard -j prepwizard_{pdbfile.replace(".", "_").replace("/","_")} -watdist 5 -rehtreat -propka_pH 7.4  -HOST localhost:1 -noimpref -TMPLAUNCHDIR -ATTACHED -WAIT {pdbfile} {pdbfile.replace(".pdb","_fixed.maegz")}'
 
     # print("Running command:", cmd)
     os.system(cmd)
@@ -142,7 +142,7 @@ HOST	localhost:1
     os.system(f'rm {pdbfile.replace(".pdb","_refine.inp")}')
     os.system(f'rm {pdbfile.replace(".pdb","_refine-out.maegz")}')
     os.system(f'rm {pdbfile.replace(".pdb","_refine.log")}')
-    os.system(f'rm prepwizard_{pdbfile.replace('.', '_').replace("/","_")}.log')
+    os.system(f'rm prepwizard_{pdbfile.replace(".", "_").replace("/","_")}.log')
     
     time_cost=time.time()-start_time
     return time_cost
@@ -190,8 +190,8 @@ def process_single_sdf(protein_file, ligand_file, method='local_refine'):
         refined_file = ligand_file.replace('.sdf', '_complex_refined.pdb')
         
         # Skip if already refined
-        # if os.path.exists(refined_file):
-        #     return ('skip', ligand_file, 0)
+        if os.path.exists(refined_file):
+            return ('skip', ligand_file, 0)
         
         # Generate complex if not exists
         if not os.path.exists(output_file):
@@ -243,7 +243,7 @@ if __name__ == "__main__":
     import time as time_module
     start_time = time_module.time()
     
-    with Pool(128) as p:
+    with Pool(160) as p:
         results = p.starmap(process_single_sdf, task_list)
     
     
